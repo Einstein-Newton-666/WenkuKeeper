@@ -432,7 +432,20 @@ plugin/src/main/kotlin/io/github/lnrplugin/wenkukeeper/
 它是**独立的根提交**（orphan），与 `main` 没有共同历史；改插件时只更新这一条分支。
 
 `plugin.toml` 的 `[release.download] sha1` 必须与同目录的 `plugin-debug.apk.lnrp` 一致，
-否则商店装出来的包校验不过。
+否则商店装出来的包校验不过。**这一步连同干净构建都已脚本化**：
+
+```powershell
+# 干净构建 → 回写版本号与 sha1 → 打印待提交差异（不提交）
+.\tools\make-distribution.ps1
+
+# 确认无误后，提交并推送 distribution 分支
+.\tools\make-distribution.ps1 -Push
+```
+
+脚本在提交前会自检「`plugin.toml` 声明的 sha1 == 同目录 `lnrp` 的实际 sha1」，不一致直接报错。
+
+> **代价**：`distribution` 分支里有 15 MB 的 `.lnrp`，而 `git clone` 会拉取所有分支的对象，
+> 所以克隆本仓库约 15 MB（源码本身只有 0.6 MB）。这是用分支而非独立仓库承载分发包的取舍。
 
 ### 上架官方插件市场
 
