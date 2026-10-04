@@ -1,0 +1,54 @@
+id = "io.github.lnrplugin.wenkukeeper"
+name = "文库管家"
+author = "Einstein-Newton-666"
+categories = ["novel"]
+summary = "wenku8 数据源 + 书架云备份 + 书库迁移"
+is_nsfw = false
+
+description = """
+把 wenku8 轻小说文库接入 LightNovelReader，并照看好你的书架。
+
+· 数据源：详情 / 目录 / 正文 / 搜索 / 探索页，注册为独立数据源，与宿主内置的 Wenku8 并存、可分别启停
+· 云端备份：书架 + 阅读进度（含逐章）+ 插件设置，存到你自己的 WebDAV 空间或 GitHub 私有仓库
+· 阅读记录：额外生成一份人可读的 READING_LOG.md
+· 书库迁移：把书架里的书（含阅读进度）迁到另一个数据源
+· 站点账号同步（可选，默认关闭）：把书架与书签写进你自己的 wenku8 账号
+· 可选会话 Cookie：站点要求请求带 Cookie 时填上即可，留空则维持无凭据模式
+
+插件不内置任何账号凭据，也不收集任何数据。
+"""
+
+target_api = 4
+languages = ["zh-CN"]
+copyright = "© 2026 Einstein-Newton-666"
+
+[release]
+version_name = "1.1.0"
+version_code = 2
+changelog = """
+首个公开发布版本。
+
+1. wenku8 数据源：详情 / 目录 / 正文 / 搜索 / 探索页
+2. 云端备份：书架 + 阅读进度 + 插件设置，可存 WebDAV 或 GitHub，合并策略只增不减
+3. 阅读记录：额外生成人可读的 READING_LOG.md
+4. 书库迁移：把书架里的书（含阅读进度）迁到另一个数据源
+5. 站点账号同步（可选，默认关闭）：把书架与书签写进自己的 wenku8 账号
+6. 插件内更新检查：打开插件页面时读本仓库的 Releases
+"""
+
+[release.download]
+file = "plugin-debug.apk.lnrp"
+output_file = "plugin-debug.apk.lnrp"
+sha1 = "a0b282474b82990bb1f5cd15b06373972e3bd6a4"
+
+[privacy]
+data_keys = ["network_access"]
+notes = "插件在本机（宿主数据库，未加密）保存你填写的 WebDAV 密码 / GitHub 令牌 / wenku8 会话 Cookie，仅用于访问对应服务，且不会被写入云端备份。云端备份会把书架与阅读进度上传到你**自己配置的** WebDAV 空间或 GitHub 仓库，不经过任何第三方服务器。站点账号同步默认关闭，开启后才会向 wenku8 写入书架与书签。插件不收集统计信息。"
+
+[links]
+homepage = "https://github.com/Einstein-Newton-666/WenkuKeeper"
+repository = "https://github.com/Einstein-Newton-666/WenkuKeeper.git"
+
+[assets]
+icon = "icon.png"
+screenshots = ["screenshot_1.png", "screenshot_2.png", "screenshot_3.png"]
