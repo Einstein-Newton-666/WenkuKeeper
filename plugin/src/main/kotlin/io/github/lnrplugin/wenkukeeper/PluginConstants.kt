@@ -16,8 +16,24 @@ object PluginConstants {
     /** Namespace part of every [Identifier] created by this plugin. */
     const val ID_NAMESPACE = "wenkukeeper"
 
-    /** Version of the plugin itself, shown by the host's plugin management screen. */
-    const val PLUGIN_VERSION_NAME = "1.0.0"
+    /**
+     * Version of the plugin itself, shown by the host's plugin management screen.
+     *
+     * 它同时是更新检查的比较基准（远端 tag 大于它才提示新版本），因此**每次发版都要改**，
+     * 并在仓库里打上对应的 `v<版本>` tag。
+     */
+    const val PLUGIN_VERSION_NAME = "1.1.0"
+
+    /**
+     * 插件的发布仓库（`owner/repo`）。
+     *
+     * 更新检查读它的 `/releases/latest`。之所以插件自己查，是因为宿主的更新检查只认官方
+     * 插件商店（`plugins.nariko.org`），而 API 里的 `@Plugin(updateUrl)` 宿主从未读取。
+     */
+    const val RELEASE_REPOSITORY = "Einstein-Newton-666/WenkuKeeper"
+
+    /** 项目主页；与 [RELEASE_REPOSITORY] 同源，避免两处写出不同地址。 */
+    const val PROJECT_URL = "https://github.com/$RELEASE_REPOSITORY"
 
     /**
      * Identifier of the [io.nightfish.lightnovelreader.api.web.WebBookDataSource] contributed by

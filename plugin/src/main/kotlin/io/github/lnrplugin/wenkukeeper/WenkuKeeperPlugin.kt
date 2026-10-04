@@ -14,6 +14,7 @@ import io.github.lnrplugin.wenkukeeper.source.WenkuKeeperDataSource
 import io.github.lnrplugin.wenkukeeper.ui.MigrationViewModel
 import io.github.lnrplugin.wenkukeeper.ui.SiteSyncViewModel
 import io.github.lnrplugin.wenkukeeper.ui.SyncViewModel
+import io.github.lnrplugin.wenkukeeper.ui.UpdateViewModel
 import io.github.lnrplugin.wenkukeeper.ui.WenkuKeeperPage
 import io.nightfish.lightnovelreader.api.book.BookRepositoryApi
 import io.nightfish.lightnovelreader.api.book.LocalBookDataSourceApi
@@ -62,7 +63,7 @@ import kotlinx.coroutines.launch
 @Suppress("unused")
 @Plugin(
     name = "文库管家",
-    version = 1,
+    version = 2,
     versionName = PluginConstants.PLUGIN_VERSION_NAME,
     author = "LightNovelReader 插件社区",
     description = "wenku8 数据源 + 书架/阅读进度云备份 + 书库迁移 + 可选的站点账号同步",
@@ -191,6 +192,14 @@ class WenkuKeeperPlugin(
         )
     }
 
+    /**
+     * 更新检查的状态持有者。
+     *
+     * 宿主的更新检查只认官方插件商店，未上架的插件永远不会被提示；这里直接读插件自己
+     * GitHub 仓库的 Releases，见 [io.github.lnrplugin.wenkukeeper.update.UpdateChecker]。
+     */
+    private val updateViewModel: UpdateViewModel by lazy { UpdateViewModel() }
+
     override fun onLoad() {
         Log.i(TAG, "WenkuKeeper 插件已加载，数据源 id = ${PluginConstants.WEB_DATA_SOURCE}")
         // 数据源由宿主在本回调之后才实例化，因此把仓库登记到共享持有者，供其读取插件设置。
@@ -249,12 +258,14 @@ class WenkuKeeperPlugin(
         val viewModel = remember { syncViewModel }
         val migration = remember { migrationViewModel }
         val siteSync = remember { siteSyncViewModel }
+        val update = remember { updateViewModel }
         WenkuKeeperPage(
             paddingValues = paddingValues,
             userDataRepository = userDataRepository,
             syncViewModel = viewModel,
             migrationViewModel = migration,
-            siteSyncViewModel = siteSync
+            siteSyncViewModel = siteSync,
+            updateViewModel = update
         )
     }
 }

@@ -352,31 +352,66 @@ Nextcloud、群晖、Alist、自建 Nginx+WebDAV 等同理，填入对应的 Web
 
 ```
 plugin/src/main/kotlin/io/github/lnrplugin/wenkukeeper/
-├── PluginConstants.kt          数据源标识、镜像、标签等常量
-├── PluginSettings.kt           所有用户数据键与默认值（唯一来源）
-├── WenkuKeeperPlugin.kt         插件入口（@Plugin + 依赖注入 + 页面）
-├── PluginDiscoveryReceiver.kt  响应宿主的插件发现广播
+├── PluginConstants.kt            数据源标识、镜像、标签、发布仓库等常量
+├── PluginSettings.kt             所有用户数据键与默认值（唯一来源）
+├── WenkuKeeperPlugin.kt          插件入口（@Plugin + 依赖注入 + 页面）
+├── PluginDiscoveryReceiver.kt    响应宿主的插件发现广播
 ├── tools/
-│   ├── Wenku8HttpClient.kt     Ktor + CIO 网络层：GB18030 解码、限流、镜像探测
-│   └── JsoupXPath.kt           安全的 XPath / 文本 / URL 工具
+│   ├── Wenku8HttpClient.kt       Ktor + CIO 网络层：GB18030 解码、限流、镜像探测、可选 Cookie
+│   └── JsoupXPath.kt             安全的 XPath / 文本 / URL 工具
 ├── source/
-│   ├── WenkuKeeperDataSource.kt WebBookDataSource 实现：详情 / 目录 / 正文
-│   ├── PluginSettingsRegistry.kt  在入口与数据源之间共享用户数据仓库
-│   ├── search/WenkuKeeperSearchProvider.kt
-│   └── explore/                探索卡片页与展开页数据源
+│   ├── WenkuKeeperDataSource.kt  WebBookDataSource 实现：详情 / 目录 / 正文
+│   ├── PluginSettingsRegistry.kt 在入口与数据源之间共享用户数据仓库
+│   ├── search/WenkuKeeperSearchProvider.kt   搜索（GB2312 关键词 + 5 秒间隔重试）
+│   └── explore/                  探索卡片页与展开页数据源
+├── site/
+│   ├── Wenku8SiteShelf.kt        站点书架行模型与解析器（DOM 结构来自真实抓包）
+│   └── Wenku8SiteClient.kt       站点书架读写：bookcase.php / addbookcase.php
 ├── cloud/
 │   ├── remote/
-│   │   ├── RemoteStore.kt      远端存储抽象：WebDAV 与 GitHub 共用的接口与错误模型
-│   │   └── GitHubStore.kt      GitHub Contents API 实现（PAT 认证）
-│   ├── WebDavClient.kt         WebDAV 客户端（PROPFIND/PUT/GET/MKCOL/DELETE + Basic/Digest）
-│   ├── SnapshotCodec.kt        快照模型、编解码与合并策略
-│   ├── ReadingLogBuilder.kt    把人可读的阅读记录渲染成 Markdown
-│   └── CloudSyncEngine.kt      上传 / 列表 / 下载 / 恢复 编排（后端无关）
+│   │   ├── RemoteStore.kt        远端存储抽象：WebDAV 与 GitHub 共用的接口与错误模型
+│   │   └── GitHubStore.kt        GitHub Contents API 实现（PAT 认证）
+│   ├── WebDavClient.kt           WebDAV 客户端（PROPFIND/PUT/GET/MKCOL/DELETE + Basic/Digest）
+│   ├── SnapshotCodec.kt          快照模型、编解码与合并策略
+│   ├── ReadingLogBuilder.kt      把人可读的阅读记录渲染成 Markdown
+│   └── CloudSyncEngine.kt        上传 / 列表 / 下载 / 恢复 编排（后端无关）
+├── migrate/
+│   ├── MigrationPlan.kt          迁移计划的模型、持久化与书名/作者打分
+│   ├── MigrationEngine.kt        导出 / 匹配 / 采纳 / 导入四阶段编排
+│   └── ChineseVariant.kt         简繁归一（经宿主类加载器反射取 android.icu）
+├── update/
+│   └── UpdateChecker.kt          读本仓库的 GitHub Releases 做更新检查
 └── ui/
-    ├── WenkuKeeperPage.kt       插件页面（Compose）
-    ├── SyncViewModel.kt        页面状态与操作
-    └── SimpleTextDialog.kt     文本输入对话框
+    ├── WenkuKeeperPage.kt        插件页面（Compose）
+    ├── SyncViewModel.kt          云端同步状态与操作
+    ├── MigrationViewModel.kt     书库迁移状态与操作
+    ├── MigrationSection.kt       迁移分节的界面
+    ├── SiteSyncViewModel.kt      站点账号同步状态与操作
+    ├── UpdateViewModel.kt        更新检查状态
+    ├── BackendChooserDialog.kt   后端选择对话框
+    └── SimpleTextDialog.kt       文本输入对话框
 ```
+
+---
+
+## 更新
+
+**宿主的插件更新检查只认官方插件商店**（`plugins.nariko.org/api/plugins?id=<包名>`），
+而插件 API 里的 `@Plugin(updateUrl = …)` 宿主**从未读取**——所以没上架商店的插件，
+宿主永远不会提示更新。本插件因此**自己查自己的 GitHub Releases**：打开插件页面时自动查一次
+（每次进程最多一次），也可以在「关于 → 检查更新」手动重查；有新版本时下方会多出一行
+「下载新版本」直接跳到发布页。
+
+> 仓库一个 Release 都没发过时 GitHub 返回 404。插件把这种情况单独说成
+> 「仓库还没有发布 Release」而不是报错——它不是故障，别和"连不上"混为一谈。
+
+**发版约定**（不照做用户就收不到提示）：
+
+1. 改 `PluginConstants.PLUGIN_VERSION_NAME`，同时把 `@Plugin(version = )` 与
+   `plugin/build.gradle.kts` 里的 `versionCode` 各加 1；
+2. tag 用 `v<PLUGIN_VERSION_NAME>`（如 `v1.1.0`）。比较时忽略 `v` 前缀、按 `.`/`-`/`+`/`_`
+   切段、每段只取开头数字、段数不同按 0 补齐（因此 `1.1` 与 `1.1.0` 等价）；
+3. 在 GitHub 上以该 tag 发布 Release——草稿与预发布不会被 `/releases/latest` 选中。
 
 ---
 

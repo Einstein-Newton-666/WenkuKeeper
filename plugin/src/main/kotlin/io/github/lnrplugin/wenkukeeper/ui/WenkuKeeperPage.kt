@@ -39,9 +39,10 @@ import java.util.Locale
 /**
  * 项目主页。
  *
- * 插件本身还没有独立的代码仓库, 因此暂时指向宿主的项目主页; 将来发布独立仓库时只需要修改这里。
+ * 指向插件自己的发布仓库, 定义在 [PluginConstants.PROJECT_URL]; 更新检查也读同一个仓库的
+ * Releases, 因此两处不会写出不同地址。
  */
-private const val PROJECT_URL = "https://github.com/dmzz-yyhyy/LightNovelReader"
+private const val PROJECT_URL = PluginConstants.PROJECT_URL
 
 /** 时间戳的显示格式。 */
 private const val TIME_PATTERN = "yyyy-MM-dd HH:mm"
@@ -56,6 +57,8 @@ private const val TIME_PATTERN = "yyyy-MM-dd HH:mm"
  * @param userDataRepository 宿主提供的用户数据仓库, 用于读写插件设置
  * @param syncViewModel 云端同步的状态持有者, 由插件入口类构造
  * @param migrationViewModel 书库迁移的状态持有者, 由插件入口类构造
+ * @param siteSyncViewModel 站点账号同步的状态持有者, 由插件入口类构造
+ * @param updateViewModel 更新检查的状态持有者, 由插件入口类构造
  */
 @Composable
 fun WenkuKeeperPage(
@@ -63,10 +66,12 @@ fun WenkuKeeperPage(
     userDataRepository: UserDataRepositoryApi,
     syncViewModel: SyncViewModel,
     migrationViewModel: MigrationViewModel,
-    siteSyncViewModel: SiteSyncViewModel
+    siteSyncViewModel: SiteSyncViewModel,
+    updateViewModel: UpdateViewModel
 ) {
     val uiState by syncViewModel.uiState.collectAsState()
     val siteUiState by siteSyncViewModel.uiState.collectAsState()
+    val updateUiState by updateViewModel.uiState.collectAsState()
 
     val enableExplore by rememberBooleanSetting(
         userDataRepository, PluginSettings.ENABLE_EXPLORE, PluginSettings.DEFAULT_ENABLE_EXPLORE
@@ -165,6 +170,11 @@ fun WenkuKeeperPage(
 
     LaunchedEffect(syncViewModel) {
         syncViewModel.refreshStatus()
+    }
+
+    // 打开插件页面时自动查一次更新（本次进程内只跑一次，之后靠用户点「检查更新」）。
+    LaunchedEffect(updateViewModel) {
+        updateViewModel.checkOnce()
     }
 
     Column(
@@ -440,6 +450,31 @@ fun WenkuKeeperPage(
             description = "${PluginConstants.SOURCE_NAME} " +
                 "${PluginConstants.PLUGIN_VERSION_NAME}（Api ${PluginConstants.API_VERSION}）"
         )
+        // 宿主的更新检查只查官方插件商店, 未上架的插件永远不会被提示, 所以这里自己查
+        // GitHub Releases。做成可点的一项: 点一次重查, 有新版本时下方多出一行跳转入口。
+        SettingsClickableEntry(
+            modifier = settingsEntryModifier(),
+            title = "检查更新",
+            description = updateUiState.message,
+            option = if (updateUiState.latestTag.isNotBlank()) "新版本 ${updateUiState.latestTag}" else null,
+            trailingContent = {
+                if (updateUiState.checking) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            },
+            onClick = updateViewModel::check
+        )
+        updateUiState.latestUrl?.let { url ->
+            SettingsClickableEntry(
+                modifier = settingsEntryModifier(),
+                title = "下载新版本",
+                description = "在浏览器中打开发布页面",
+                openUrl = url
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
     }
