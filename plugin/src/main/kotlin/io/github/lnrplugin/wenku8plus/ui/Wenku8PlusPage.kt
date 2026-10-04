@@ -72,6 +72,9 @@ fun Wenku8PlusPage(
     val preferredHost by rememberStringSetting(
         userDataRepository, PluginSettings.PREFERRED_HOST, PluginSettings.DEFAULT_PREFERRED_HOST
     )
+    val wenku8Cookie by rememberStringSetting(
+        userDataRepository, PluginSettings.WENKU8_COOKIE, PluginSettings.DEFAULT_WENKU8_COOKIE
+    )
     val webdavUrl by rememberStringSetting(
         userDataRepository, PluginSettings.WEBDAV_URL, PluginSettings.DEFAULT_WEBDAV_URL
     )
@@ -175,6 +178,21 @@ fun Wenku8PlusPage(
             description = "留空表示自动探测可用镜像, 例如 https://www.wenku8.net (需重启宿主生效)",
             option = preferredHost.ifBlank { "自动" },
             onClick = { dialog = Wenku8PlusDialog.PreferredHost }
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+        SectionHeader(text = "wenku8 账号 (可选)")
+
+        // 站点现在要求请求带登录 Cookie，它同时携带 Cloudflare 的放行凭证；
+        // 不带时站点返回 403，控制器里看到的就是"数据源不可用"。留空即维持无凭据模式。
+        SettingsClickableEntry(
+            modifier = settingsEntryModifier(),
+            title = "会话 Cookie",
+            description = "在浏览器登录 www.wenku8.net 后复制完整 Cookie (形如 PHPSESSID=...; jieqiUserInfo=...)。" +
+                    "留空表示不带任何凭据; 只保存在本机, 不会写入云端快照",
+            option = if (wenku8Cookie.isNotBlank()) "已设置" else "未设置",
+            onClick = { dialog = Wenku8PlusDialog.Wenku8Cookie }
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
@@ -442,6 +460,20 @@ fun Wenku8PlusPage(
                 }
             )
 
+            Wenku8PlusDialog.Wenku8Cookie -> SimpleTextDialog(
+                title = "wenku8 会话 Cookie",
+                description = "在浏览器登录 www.wenku8.net 后, 从开发者工具里复制完整 Cookie " +
+                        "(如 PHPSESSID=...; jieqiUserInfo=...)。留空表示不带凭据。" +
+                        "只保存在本机, 不会写入云端快照; 站点会话过期后需要重新复制",
+                initialText = wenku8Cookie,
+                confirmText = "保存",
+                onDismissRequest = { dialog = null },
+                onConfirm = { value ->
+                    writeString(userDataRepository, PluginSettings.WENKU8_COOKIE, value.trim())
+                    dialog = null
+                }
+            )
+
             Wenku8PlusDialog.WebDavUrl -> SimpleTextDialog(
                 title = "服务器地址",
                 description = "WebDAV 服务地址, 需要以 / 结尾",
@@ -517,6 +549,9 @@ fun Wenku8PlusPage(
 private enum class Wenku8PlusDialog {
     /** 数据源的首选镜像。 */
     PreferredHost,
+
+    /** 可选的 wenku8 会话 Cookie。 */
+    Wenku8Cookie,
 
     /** 云端存储后端（WebDAV / GitHub）。 */
     CloudBackend,

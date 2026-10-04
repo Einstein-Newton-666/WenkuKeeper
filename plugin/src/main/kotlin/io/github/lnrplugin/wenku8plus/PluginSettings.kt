@@ -22,6 +22,19 @@ object PluginSettings {
     /** Whether to follow the whole catalogue through the explore pages. */
     const val ENABLE_EXPLORE = "$ROOT.source.enableExplore"
 
+    /**
+     * 可选的 wenku8 会话 Cookie（用户从浏览器复制）。
+     *
+     * 站点现在对绝大多数请求都要求带登录 Cookie，且该 Cookie 里同时携带 Cloudflare 的放行
+     * 凭证——不带它时站点直接返回 403 challenge，这也是本插件曾经"数据源不可用"的原因。
+     *
+     * 设计取舍：**不做用户名密码登录，也不内置任何凭据**。用户自己登录站点、自己复制 Cookie，
+     * 插件只负责带上它。留空时行为与从前完全一致（无凭据，可能被 Cloudflare 挡）。
+     *
+     * 属于敏感项：只保存在宿主数据库，**绝不写入云端快照**，见 `CloudSyncEngine.SENSITIVE_SETTING_PATHS`。
+     */
+    const val WENKU8_COOKIE = "$ROOT.source.cookie"
+
     // ---------------------------------------------------------------------
     // Cloud sync — backend selection
     // ---------------------------------------------------------------------
@@ -96,6 +109,7 @@ object PluginSettings {
     val ALL: List<String> = listOf(
         PREFERRED_HOST,
         ENABLE_EXPLORE,
+        WENKU8_COOKIE,
         CLOUD_BACKEND,
         WRITE_READING_LOG,
         WEBDAV_URL,
@@ -130,6 +144,7 @@ object PluginSettings {
 
     const val DEFAULT_PREFERRED_HOST = ""
     const val DEFAULT_ENABLE_EXPLORE = true
+    const val DEFAULT_WENKU8_COOKIE = ""
     const val DEFAULT_CLOUD_BACKEND = BACKEND_WEBDAV
     const val DEFAULT_WRITE_READING_LOG = true
     const val DEFAULT_WEBDAV_URL = ""

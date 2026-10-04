@@ -166,6 +166,9 @@ class Wenku8PlusDataSource : WebBookDataSource {
 
     override fun onLoad() {
         scope.launch {
+            // 先取一次会话 Cookie 再探测镜像：站点现在对无 Cookie 的请求直接返回 403，
+            // 不带 Cookie 探测会把所有镜像都误判成不可用。
+            httpClient.updateCookie(readCookie())
             // 优先使用用户指定的镜像；未指定时按内置顺序自动探测。
             // selectHost 内部每个候选只做一次带 3 秒超时的探测，因此这里最多阻塞数秒。
             httpClient.selectHost(readPreferredHost())
@@ -174,11 +177,28 @@ class Wenku8PlusDataSource : WebBookDataSource {
                 offLineStateFlow.value = offLine
                 // 顺带刷新探索页开关，让用户在插件页面里的改动无需重启宿主即可生效。
                 exploreEnabled = readExploreEnabled()
+                // 同理刷新会话 Cookie：站点会话会过期，改了也应当尽快生效。
+                httpClient.updateCookie(readCookie())
                 // 离线时更快重试，在线时降低探测频率。
                 delay((if (offLine) 5_000L else 120_000L).milliseconds)
             }
         }
     }
+
+    /**
+     * 读取用户填写的 wenku8 会话 Cookie。
+     *
+     * 留空表示不带凭据（此时站点可能返回 Cloudflare 挑战页）。读取失败按留空处理：
+     * 设置读取问题不应该影响数据源本身。
+     *
+     * @return 去空白后的 Cookie；未设置或读取失败时为空串
+     */
+    private suspend fun readCookie(): String = runCatching {
+        userDataRepository
+            ?.stringUserData(PluginSettings.WENKU8_COOKIE)
+            ?.get()
+            ?.trim()
+    }.getOr(null).orEmpty()
 
     /**
      * 读取「启用探索页」设置。

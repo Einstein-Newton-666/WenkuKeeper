@@ -92,7 +92,10 @@ private val LOCAL_ONLY_SETTING_PATHS: Set<String> = setOf(
 private val SENSITIVE_SETTING_PATHS: Set<String> = setOf(
     PluginSettings.WEBDAV_USERNAME,
     PluginSettings.WEBDAV_PASSWORD,
-    PluginSettings.GITHUB_TOKEN
+    PluginSettings.GITHUB_TOKEN,
+    // wenku8 会话 Cookie 等同于账号凭据：带上它就等于登录了用户的文库账号，也能读 VIP 章节。
+    // 快照是明文存放的，写进去等于把会话泄露到云端，而且用别的设备恢复会顶掉那台的登录态。
+    PluginSettings.WENKU8_COOKIE
 )
 
 /**

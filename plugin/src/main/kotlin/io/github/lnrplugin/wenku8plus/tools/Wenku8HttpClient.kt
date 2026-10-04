@@ -11,6 +11,7 @@ import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.timeout
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsBytes
@@ -112,6 +113,34 @@ class Wenku8HttpClient(
     val baseUrl: String get() = host
 
     /**
+     * 当前使用的 wenku8 会话 Cookie；空串表示不带任何凭据。
+     *
+     * 站点现在对无 Cookie 的请求直接返回 403 challenge，带上它之后才可能拿到内容。
+     * 值由 [io.github.lnrplugin.wenku8plus.source.Wenku8PlusDataSource] 的轮询循环写入——
+     * 读取用户设置是挂起操作，不能在本类里同步读，所以这里只保存一个快照值。
+     */
+    @Volatile
+    private var sessionCookie: String = ""
+
+    /**
+     * 更新会话 Cookie。
+     *
+     * @param value 从插件设置读到的 Cookie；空白表示关闭，退回无凭据请求
+     */
+    fun updateCookie(value: String) {
+        sessionCookie = value.trim()
+    }
+
+    /**
+     * 给请求附上可选的会话 Cookie。
+     *
+     * 只在非空时添加请求头，避免给站点送去一个空的 `Cookie:`。
+     */
+    private fun HttpRequestBuilder.withSessionCookie() {
+        if (sessionCookie.isNotEmpty()) header(HttpHeaders.Cookie, sessionCookie)
+    }
+
+    /**
      * 依据用户偏好与可用性选择站点主机。
      *
      * 用户明确指定了镜像时只尝试该镜像：若不可用则保持当前值不变，而不是静默改用别的镜像
@@ -146,6 +175,7 @@ class Wenku8HttpClient(
     private suspend fun probe(baseUrl: String): Boolean = withContext(Dispatchers.IO) {
         runCatching {
             ktorClient.get(baseUrl) {
+                withSessionCookie()
                 timeout {
                     requestTimeoutMillis = PROBE_TIMEOUT_MILLIS
                     connectTimeoutMillis = PROBE_TIMEOUT_MILLIS
@@ -187,7 +217,7 @@ class Wenku8HttpClient(
         semaphore.withPermit {
             runCatching {
                 val url = absoluteUrl(pathOrUrl)
-                val bytes = ktorClient.get(url).bodyAsBytes()
+                val bytes = ktorClient.get(url) { withSessionCookie() }.bodyAsBytes()
                 val html = String(bytes, WENKU8_CHARSET)
                 Jsoup.parse(html).outputSettings(
                     Document.OutputSettings()
@@ -209,6 +239,7 @@ class Wenku8HttpClient(
         semaphore.withPermit {
             runCatching {
                 ktorClient.get(absoluteUrl(url)) {
+                    withSessionCookie()
                     header(HttpHeaders.Referrer, host)
                 }.bodyAsBytes()
             }
