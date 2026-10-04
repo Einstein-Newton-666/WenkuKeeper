@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LightNovelReaderWenku8Plus"
+rootProject.name = "LightNovelReaderWenkuKeeper"
 include(":plugin")

@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.lnrplugin.wenku8plus"
+    namespace = "io.github.lnrplugin.wenkukeeper"
     compileSdk = 37
 
     // 显式指定 Build Tools：AGP 9.2.1 默认要求 36.0.0，而 SDK 里不一定装了那一个版本
@@ -17,7 +17,7 @@ android {
     buildToolsVersion = "37.0.0"
 
     defaultConfig {
-        applicationId = "io.github.lnrplugin.wenku8plus"
+        applicationId = "io.github.lnrplugin.wenkukeeper"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

@@ -1,8 +1,10 @@
-# Wenku8Plus — LightNovelReader 插件
+# 文库管家 (WenkuKeeper) — LightNovelReader 插件
 
 把 [wenku8 轻小说文库](https://www.wenku8.net/) 的小说数据接入
-[LightNovelReader](https://github.com/dmzz-yyhyy/LightNovelReader)，并把你的书架与阅读记录
-备份到**你自己的** WebDAV 空间或 GitHub 私有仓库。
+[LightNovelReader](https://github.com/dmzz-yyhyy/LightNovelReader)，把你的书架与阅读记录
+备份到**你自己的** WebDAV 空间或 GitHub 私有仓库，并支持书库迁移与可选的站点账号同步。
+
+> 插件列表里显示的名字是**文库管家**；`WenkuKeeper` 是它的英文名，也是包名与仓库名所用的标识。
 
 面向宿主的插件 API 版本：**4**（`ApiMetadata.API_VERSION = 4`）。
 
@@ -18,7 +20,7 @@
 
 ### 1. 从 wenku8 同步小说数据
 
-插件注册一个名为 `Wenku8Plus` 的网络数据源（标识符 `wenku8plus:wenku8_plus`），提供：
+插件注册一个名为 `WenkuKeeper` 的网络数据源（标识符 `wenkukeeper:wenku8`），提供：
 
 | 能力 | 说明 |
 | --- | --- |
@@ -133,7 +135,7 @@ JSON 结构（`CloudSnapshot`）：
   "deviceLabel": "Android",
   "bookshelves": [ { "id": 1, "name": "默认", "allBookIds": ["1712"], "pinnedBookIds": [], "updatedBookIds": [] } ],
   "readingData": [ { "id": "1712", "readingProgress": 0.42, "lastReadChapterId": "12345" } ],
-  "userData":     [ { "path": "plugin.wenku8plus.cloud.webdavUrl", "group": "plugin.wenku8plus.cloud", "type": "String", "value": "..." } ]
+  "userData":     [ { "path": "plugin.wenkukeeper.cloud.webdavUrl", "group": "plugin.wenkukeeper.cloud", "type": "String", "value": "..." } ]
 }
 ```
 
@@ -247,8 +249,8 @@ JSON 结构（`CloudSnapshot`）：
 1. 从 Release 或构建产物中拿到 `plugin-debug.apk.lnrp`；
 2. 在 LightNovelReader 中打开「设置 → 插件管理 → 从文件安装」，选择该 `.lnrp` 文件；
    （也可以把文件后缀改回 `.apk` 后用系统安装器安装）
-3. 安装后回到插件管理页启用 **Wenku8Plus**；
-4. 在「设置 → 数据源」里把数据源切换为 **Wenku8Plus**。
+3. 安装后回到插件管理页启用 **WenkuKeeper**；
+4. 在「设置 → 数据源」里把数据源切换为 **WenkuKeeper**。
 
 ### 方式二：自行构建
 
@@ -349,18 +351,18 @@ Nextcloud、群晖、Alist、自建 Nginx+WebDAV 等同理，填入对应的 Web
 ## 项目结构
 
 ```
-plugin/src/main/kotlin/io/github/lnrplugin/wenku8plus/
+plugin/src/main/kotlin/io/github/lnrplugin/wenkukeeper/
 ├── PluginConstants.kt          数据源标识、镜像、标签等常量
 ├── PluginSettings.kt           所有用户数据键与默认值（唯一来源）
-├── Wenku8PlusPlugin.kt         插件入口（@Plugin + 依赖注入 + 页面）
+├── WenkuKeeperPlugin.kt         插件入口（@Plugin + 依赖注入 + 页面）
 ├── PluginDiscoveryReceiver.kt  响应宿主的插件发现广播
 ├── tools/
 │   ├── Wenku8HttpClient.kt     Ktor + CIO 网络层：GB18030 解码、限流、镜像探测
 │   └── JsoupXPath.kt           安全的 XPath / 文本 / URL 工具
 ├── source/
-│   ├── Wenku8PlusDataSource.kt WebBookDataSource 实现：详情 / 目录 / 正文
+│   ├── WenkuKeeperDataSource.kt WebBookDataSource 实现：详情 / 目录 / 正文
 │   ├── PluginSettingsRegistry.kt  在入口与数据源之间共享用户数据仓库
-│   ├── search/Wenku8PlusSearchProvider.kt
+│   ├── search/WenkuKeeperSearchProvider.kt
 │   └── explore/                探索卡片页与展开页数据源
 ├── cloud/
 │   ├── remote/
@@ -371,7 +373,7 @@ plugin/src/main/kotlin/io/github/lnrplugin/wenku8plus/
 │   ├── ReadingLogBuilder.kt    把人可读的阅读记录渲染成 Markdown
 │   └── CloudSyncEngine.kt      上传 / 列表 / 下载 / 恢复 编排（后端无关）
 └── ui/
-    ├── Wenku8PlusPage.kt       插件页面（Compose）
+    ├── WenkuKeeperPage.kt       插件页面（Compose）
     ├── SyncViewModel.kt        页面状态与操作
     └── SimpleTextDialog.kt     文本输入对话框
 ```
@@ -384,8 +386,8 @@ plugin/src/main/kotlin/io/github/lnrplugin/wenku8plus/
 
 | 环节 | 结果 |
 | --- | --- |
-| 插件加载 | ✅ `Wenku8Plus 插件已加载，数据源 id = wenku8plus:wenku8_plus` |
-| 数据源注册与切换 | ✅ 宿主数据源列表出现 Wenku8Plus，切换后书架走插件的实现 |
+| 插件加载 | ✅ `WenkuKeeper 插件已加载，数据源 id = wenkukeeper:wenku8` |
+| 数据源注册与切换 | ✅ 宿主数据源列表出现 WenkuKeeper，切换后书架走插件的实现 |
 | 插件页面渲染 | ✅ Compose 页面（数据源 / 云端同步 / 迁移）正常显示与滚动 |
 | 书架加载 | ✅ 3 本书正常渲染；书本详情取不到时显示宿主的错误页，不崩溃 |
 | 迁移 · 1 导出书架 | ✅ 「已导出 3 本书」，计划落盘到 `plugins/<包名>/data/migration-plan.json` |

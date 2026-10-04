@@ -1,4 +1,4 @@
-# Wenku8Plus — LightNovelReader Plugin
+# WenkuKeeper (文库管家) — LightNovelReader Plugin
 
 Brings [wenku8](https://www.wenku8.net/) into
 [LightNovelReader](https://github.com/dmzz-yyhyy/LightNovelReader), backs up your local data to
@@ -19,7 +19,7 @@ Host plugin API version: **4** (`ApiMetadata.API_VERSION = 4`).
 
 ### 1. Sync novel data from wenku8
 
-Registers a `WebBookDataSource` named `Wenku8Plus` (identifier `wenku8plus:wenku8_plus`):
+Registers a `WebBookDataSource` named `WenkuKeeper` (identifier `wenkukeeper:wenku8`):
 
 | Capability | Details |
 | --- | --- |
@@ -134,8 +134,8 @@ Key behaviours:
 1. Obtain `plugin-debug.apk.lnrp`;
 2. In LightNovelReader open *Settings → Plugin management → Install from file* and pick the
    `.lnrp` file (renaming it back to `.apk` and installing it with the system installer also works);
-3. Enable **Wenku8Plus**;
-4. Switch the active data source to **Wenku8Plus** under *Settings → Data source*.
+3. Enable **WenkuKeeper**;
+4. Switch the active data source to **WenkuKeeper** under *Settings → Data source*.
 
 ### Build it yourself
 
