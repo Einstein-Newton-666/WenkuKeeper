@@ -1,12 +1,17 @@
 # Wenku8Plus — LightNovelReader Plugin
 
 Brings [wenku8](https://www.wenku8.net/) into
-[LightNovelReader](https://github.com/dmzz-yyhyy/LightNovelReader), and backs up your local
-data to **your own** WebDAV space.
+[LightNovelReader](https://github.com/dmzz-yyhyy/LightNovelReader), backs up your local data to
+**your own** WebDAV space or GitHub repository, and migrates a bookshelf between data sources.
 
 Host plugin API version: **4** (`ApiMetadata.API_VERSION = 4`).
 
 [简体中文](readme.md) | **English**
+
+> **Note on completeness.** This English README covers the features and usage. The Chinese
+> [`readme.md`](readme.md) is authoritative and additionally contains the on-device verification
+> results, the development pitfalls that only surface on a real device, and the full list of
+> known limitations. Read it before debugging anything.
 
 ---
 
@@ -36,7 +41,7 @@ Implementation notes:
   retries the same page.
 - **Image hotlink protection.** A `Referer` is supplied through `imageHeader`.
 
-### 2. Upload local data to the cloud (WebDAV)
+### 2. Upload local data to the cloud (WebDAV or GitHub)
 
 Configure a WebDAV endpoint on the plugin page, then:
 
@@ -71,6 +76,54 @@ account. Neither is collected nor applied; enter the credentials once per device
 > For a **complete** database backup use the host's own *Settings → Data → Export*, whose file can
 > be restored with *Import*. This plugin targets **automated off-device backup and cross-device
 > sync of the bookshelf and reading progress**.
+
+### 3. Reading log (READING_LOG.md)
+
+Alongside each snapshot the plugin also writes a **human-readable** `READING_LOG.md`:
+
+```markdown
+# Reading Log
+
+Generated 2026-10-03 21:40 | 12 books | 5 finished | 47 h 12 m total
+
+| Title | Progress | Time read | Last read | Shelf |
+| --- | --- | --- | --- | --- |
+| Book A | 100% | 6 h 3 m | 2026-10-02 23:11 | Default |
+```
+
+It renders directly on GitHub and reads fine as plain text. Book titles come from the host's local
+cache first, falling back to a remote lookup, then to the raw book id.
+
+> Why reading records instead of novel text: the content is copyrighted, exporting it would mean
+> hundreds of chapter requests per long novel, and it would produce a huge number of commits. Your
+> own reading history has none of those problems.
+
+### 4. Shelf migration
+
+**The target is always the data source currently active in the host; the source is any book already
+on your shelf.** It answers "I want to move to another site".
+
+Four steps, all on the plugin page:
+
+| Step | What it does | Network |
+| --- | --- | --- |
+| **1. Export shelf** | Writes a plan listing the books; scope can be all shelves or one | No |
+| **2. Match** | Searches the active source for each book, fetches details, scores by title and author | Yes |
+| **3. Accept high confidence** | Or accept / skip / re-match individually; each candidate shows its tier, score and reasoning | No |
+| **4. Import to a new shelf** | Creates a **new shelf** in the target source (default name `迁移导入`) | Yes |
+
+Key behaviours:
+
+- **Your original shelf is never touched.** The import only creates a new shelf in the target source.
+- **Scoring**: title and author are both scored; **≥ 80 counts as high confidence** (one-tap accept),
+  **≥ 50 medium**. A missing author on one side only adds a small amount, so a book is not treated
+  as different merely because the other site omits the author.
+- **Simplified/Traditional normalisation**: source and target are often different variants
+  (`wenku8.net` → `tw.linovelib.com`), so both sides are converted to Traditional before comparing.
+- **The plan is persisted**, so an interrupted run resumes: books already searched are skipped.
+- **Reading progress migrates only the parts that do not depend on chapter structure** — overall
+  progress, total time and last-read time take the larger value. Chapter-level maps and the
+  last-read chapter keep the target book's own values, because chapter ids differ between sites.
 
 ---
 
