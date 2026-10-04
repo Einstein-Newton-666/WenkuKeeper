@@ -67,7 +67,12 @@ import kotlinx.coroutines.launch
     versionName = PluginConstants.PLUGIN_VERSION_NAME,
     author = "LightNovelReader 插件社区",
     description = "wenku8 数据源 + 书架/阅读进度云备份 + 书库迁移 + 可选的站点账号同步",
-    updateUrl = "",
+    // 插件更新地址。⚠️ 实测：宿主当前**从不读取**这个字段——它只被搬进 PluginMetadata，
+    // 而真正的更新检查（PluginUpdateCheckRepository）查的是官方插件商店
+    // `plugins.nariko.org/api/plugins?id=<包名>`。因此这里填得再对，未上架商店的插件
+    // 也不会被宿主提示更新；插件自己查 Releases 的逻辑见 update/UpdateChecker.kt。
+    // 仍然填上是因为：这个值语义上是对的，且万一宿主将来开始读它就有用。
+    updateUrl = PluginConstants.PROJECT_URL,
     apiVersion = PluginConstants.API_VERSION
 )
 class WenkuKeeperPlugin(

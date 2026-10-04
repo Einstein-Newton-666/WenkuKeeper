@@ -20,3 +20,9 @@ local.properties
 /*.log
 hs_err_pid*.log
 replay_pid*.log
+
+# Release 签名材料：**绝不入库**。丢了就没法再用同一把密钥签名更新，
+# 请自己另找地方备份（密码管理器 / 加密盘）。
+/keystore.properties
+*.jks
+*.keystore

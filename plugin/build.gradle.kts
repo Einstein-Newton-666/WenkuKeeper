@@ -1,11 +1,41 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+// 必须显式 import：脚本里的 `java` 是 Gradle 的 JavaPluginExtension，
+// 写成 `java.util.Properties` 会解析失败（Unresolved reference 'util'）。
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.ksp)
+}
+
+// ---------------------------------------------------------------------------
+// Release signing (optional).
+//
+// The plugin is loaded by the host from a file and discovered as an installed app, so a
+// debug-signed build works. It is still not what you want to hand to users.
+// Release signing therefore reads a keystore from `<repo root>/keystore.properties`,
+// which is deliberately NOT in the repository:
+//
+//     storeFile=wenkukeeper-release.jks
+//     storePassword=...
+//     keyAlias=wenkukeeper
+//     keyPassword=...
+//
+// Generate the keystore with:
+//     keytool -genkeypair -v -keystore wenkukeeper-release.jks -alias wenkukeeper \
+//             -keyalg RSA -keysize 2048 -validity 10000
+//
+// **Back both the keystore and its passwords up.** Losing them means no future update can
+// be signed with the same key. Without the file the release build still works — the APK is
+// simply left unsigned, and the build prints a warning saying so.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -29,9 +59,23 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             isMinifyEnabled = false
@@ -42,6 +86,17 @@ android {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// 没有 keystore 时明确说出来，避免拿到一个"看起来正常"的未签名产物。
+gradle.taskGraph.whenReady {
+    val buildingRelease = allTasks.any { it.name.contains("Release") }
+    if (buildingRelease && !keystorePropertiesFile.exists()) {
+        logger.warn(
+            "[WenkuKeeper] 未找到 keystore.properties，release 产物**未签名**。" +
+                "调试与自用没问题，对外分发前请先配置签名。"
+        )
     }
 }
 
