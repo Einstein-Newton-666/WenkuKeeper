@@ -21,6 +21,22 @@
 #   5. 软件渲染（swiftshader）下开机很慢，第一次要等几分钟；系统会弹
 #      「System UI isn't responding」，那是慢不是挂，点 Wait 即可。
 #
+#   6. **netsimd 起不来会让 qemu 直接卡死。** netsimd 负责模拟蓝牙 / UWB / Wi-Fi，
+#      它需要在启动时改 Windows 防火墙（或绑定端口），**没有管理员权限会失败**：
+#
+#          Netsim daemon failed to start: 拒绝访问。 (os error 5)
+#
+#      此时 qemu 会卡在 `-chardev netsim,id=uwb` / `id=bluetooth` 上：进程存在、
+#      CPU 冻结在 ~0.6 秒不再增长、**没有任何内核输出**（加 -show-kernel 也一样），
+#      `adb devices` 里表现为 `emulator-5554 offline`。极易误判成"镜像坏了"或"虚拟化冲突"。
+#
+#      排查与修复：
+#        * 复现：直接运行 `<SDK>\emulator\netsimd.exe -l`，正常情况应该**一直不退出**；
+#          它若立刻退出并打印上面的错误，就是这个坑。换目录、换 TEMP、走计划任务都一样，
+#          说明是系统级拒绝，与工作区路径无关。
+#        * 修复：**用管理员身份**跑一次本脚本（或只跑一次 netsimd.exe），让它把防火墙
+#          规则建好；之后普通权限通常就能正常启动。
+#
 # 用法：
 #   pwsh -File tools/run-on-emulator.ps1 -CheckMemory
 #   pwsh -File tools/run-on-emulator.ps1                 # 只启动模拟器
