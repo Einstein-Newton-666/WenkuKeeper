@@ -415,6 +415,46 @@ plugin/src/main/kotlin/io/github/lnrplugin/wenkukeeper/
 
 ---
 
+## 发版流程
+
+1. **三处版本号一起改**：`PluginConstants.PLUGIN_VERSION_NAME`、`@Plugin(version = )`、
+   `plugin/build.gradle.kts` 的 `versionCode` / `versionName`。
+2. **干净构建**：增量构建会累积陈旧 dex（实测同一份源码能差 85 KB），发布前先删掉
+   `plugin/build` 与 `build` 再构建，并记下产物的 sha1 / sha256。
+3. 更新 `distribution` 分支（见下），让 `plugin.toml` 的 sha1 与新产物一致。
+4. 以 tag `v<版本>` 发布 Release，附件挂 `plugin-debug.apk.lnrp`，说明里写上两个校验和。
+5. 插件内更新检查读的就是第 4 步的 Release，所以 tag 必须与版本号相等。
+
+### `distribution` 分支
+
+插件市场要求分发文件放在仓库（或分支）的**根目录**，与源码分开，因此本仓库用一条独立的
+`distribution` 分支承载：`plugin.toml` + `plugin-debug.apk.lnrp` + `icon.png` + 截图。
+它是**独立的根提交**（orphan），与 `main` 没有共同历史；改插件时只更新这一条分支。
+
+`plugin.toml` 的 `[release.download] sha1` 必须与同目录的 `plugin-debug.apk.lnrp` 一致，
+否则商店装出来的包校验不过。
+
+### 上架官方插件市场
+
+宿主的更新检查**只认官方商店**（`@Plugin(updateUrl)` 宿主从不读取，所以插件自己查
+Releases，见上一节）。**只有上架后宿主才会提示更新。** 上架步骤：
+
+```bash
+git clone https://github.com/dmzz-yyhyy/LightNovelReader-PluginRepository.git
+cd LightNovelReader-PluginRepository
+git checkout -b add-plugin-wenkukeeper
+git submodule add -b distribution \
+    https://github.com/Einstein-Newton-666/WenkuKeeper.git \
+    plugins/io.github.lnrplugin.wenkukeeper
+git add .gitmodules plugins/io.github.lnrplugin.wenkukeeper
+git commit -m "Add plugin: 文库管家"
+git push origin add-plugin-wenkukeeper
+```
+
+然后在官方仓库发起 Pull Request，等审核通过。
+
+---
+
 ## 真机验证（Android 模拟器，API 36）
 
 以下结论来自实机运行，而不是静态检查。环境：宿主 1.3.0(debug) + 本插件 1.0.0(Api 4)。
