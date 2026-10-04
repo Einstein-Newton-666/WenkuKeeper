@@ -218,15 +218,48 @@ class Wenku8HttpClient(
             runCatching {
                 val url = absoluteUrl(pathOrUrl)
                 val bytes = ktorClient.get(url) { withSessionCookie() }.bodyAsBytes()
-                val html = String(bytes, WENKU8_CHARSET)
-                Jsoup.parse(html).outputSettings(
-                    Document.OutputSettings()
-                        .prettyPrint(false)
-                        .syntax(Document.OutputSettings.Syntax.xml)
-                )
+                buildDocument(bytes)
             }
         }
     }
+
+    /**
+     * 请求页面并解析为 [Document]，**非 2xx 视为失败**。
+     *
+     * 与 [getDocument] 的区别只在这一点：[getDocument] 不检查状态码，因为它服务于数据源
+     * ——那里站点有时会用非 2xx 返回可解析的正文。但站点同步不行：Cloudflare 的挑战页、
+     * 未登录提示页都是 403/200，正文里没有书架表格，若不检查状态码，调用方会把「被拦截」
+     * 误读成「站点书架上没有书」。
+     *
+     * @param pathOrUrl 相对 [host] 的路径，或以 `http` 开头的完整地址
+     *
+     * @return 解析后的文档；状态码非 2xx 时为失败
+     */
+    suspend fun getDocumentChecked(pathOrUrl: String): Result<Document, Throwable> = withContext(Dispatchers.IO) {
+        semaphore.withPermit {
+            runCatching {
+                val url = absoluteUrl(pathOrUrl)
+                val response = ktorClient.get(url) { withSessionCookie() }
+                val status = response.status
+                check(status.isSuccess()) {
+                    "站点返回 HTTP ${status.value}（可能未登录或未通过 Cloudflare 校验）"
+                }
+                buildDocument(response.bodyAsBytes())
+            }
+        }
+    }
+
+    /**
+     * 按 [WENKU8_CHARSET] 解码并解析 HTML。
+     *
+     * 统一在这里设置输出参数：关闭格式化输出并切换为 XML 语法，使空白节点不会混入文本内容。
+     */
+    private fun buildDocument(bytes: ByteArray): Document = Jsoup.parse(String(bytes, WENKU8_CHARSET))
+        .outputSettings(
+            Document.OutputSettings()
+                .prettyPrint(false)
+                .syntax(Document.OutputSettings.Syntax.xml)
+        )
 
     /**
      * 下载原始字节（用于封面等二进制资源）。

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--
+  wenku8 书架页的离线 fixture。
+
+  前两行来自 2026-10-04 用真实浏览器抓包得到的数据（Playwright 的 DOM 快照，
+  trace-1791105334347.trace），DOM 结构与属性逐项照抄，只把无关的换行缩进去掉了。
+
+  ★ 注意：抓包里两本书的「书签」格都是空的（<a href="#">），因此**没有任何
+    "有书签" 的真实样本**。第 3 行是照结构**合成**的，用来覆盖书签非空的代码路径，
+    它不代表站点的真实输出。真实行为仍需在能访问站点的网络下用「读取站点书架」确认。
+-->
+<html>
+<body>
+<table>
+  <tr>
+    <td>名称</td><td>作者</td><td>最新章节</td><td>书签</td><td>更新</td><td>操作</td>
+  </tr>
+
+  <!-- 真实抓取：book aid=2964，无书签 -->
+  <tr>
+    <td class="odd" align="center"><input type="checkbox" id="checkid[]" name="checkid[]" value="11791091"></td>
+    <td class="even"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=2964&amp;bid=11791091" target="_blank">Silent Witch 沉默魔女的秘密(沉默的魔女)</a></td>
+    <td class="odd"><a href="authorarticle.php?author=依空まつり">依空まつり</a></td>
+    <td class="even"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=2964&amp;bid=11791091&amp;cid=179553" target="_blank">插图</a></td>
+    <td class="odd"><a href="#" target="_blank"></a></td>
+    <td class="odd" align="center">26-09-27</td>
+    <td class="even" align="center"><a href="javascript:if(confirm('确实要将本书移出书架么？')) document.location='/modules/article/bookcase.php?delid=11791091';">移除</a></td>
+  </tr>
+
+  <!-- 真实抓取：book aid=1973，带「新」角标，无书签 -->
+  <tr>
+    <td class="odd" align="center"><input type="checkbox" id="checkid[]" name="checkid[]" value="11539000"></td>
+    <td class="even"><span class="hottext">新</span><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=1973&amp;bid=11539000" target="_blank">欢迎来到实力至上主义的教室</a></td>
+    <td class="odd"><a href="authorarticle.php?author=衣笠彰梧">衣笠彰梧</a></td>
+    <td class="even"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=1973&amp;bid=11539000&amp;cid=181001" target="_blank">之一濑帆波公式书特典</a></td>
+    <td class="odd"><a href="#" target="_blank"></a></td>
+    <td class="odd" align="center">26-09-25</td>
+    <td class="even" align="center"><a href="javascript:if(confirm('确实要将本书移出书架么？')) document.location='/modules/article/bookcase.php?delid=11539000';">移除</a></td>
+  </tr>
+
+  <!-- 合成：书签非空（覆盖未在真实抓包中出现过的路径） -->
+  <tr>
+    <td class="odd" align="center"><input type="checkbox" id="checkid[]" name="checkid[]" value="11780308"></td>
+    <td class="even"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=3241&amp;bid=11780308" target="_blank">合成样本</a></td>
+    <td class="odd"><a href="authorarticle.php?author=某人">某人</a></td>
+    <td class="even"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=3241&amp;bid=11780308&amp;cid=190001" target="_blank">第八卷 第二章</a></td>
+    <td class="odd"><a href="https://www.wenku8.net/modules/article/readbookcase.php?aid=3241&amp;bid=11780308&amp;cid=190002" target="_blank">第八卷 第二章 某个很长的章节标题</a></td>
+    <td class="odd" align="center">26-09-20</td>
+    <td class="even" align="center"><a href="javascript:if(confirm('确实要将本书移出书架么？')) document.location='/modules/article/bookcase.php?delid=11780308';">移除</a></td>
+  </tr>
+</table>
+</body>
+</html>

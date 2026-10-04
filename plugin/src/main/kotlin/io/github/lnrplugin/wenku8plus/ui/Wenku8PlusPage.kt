@@ -62,9 +62,11 @@ fun Wenku8PlusPage(
     paddingValues: PaddingValues,
     userDataRepository: UserDataRepositoryApi,
     syncViewModel: SyncViewModel,
-    migrationViewModel: MigrationViewModel
+    migrationViewModel: MigrationViewModel,
+    siteSyncViewModel: SiteSyncViewModel
 ) {
     val uiState by syncViewModel.uiState.collectAsState()
+    val siteUiState by siteSyncViewModel.uiState.collectAsState()
 
     val enableExplore by rememberBooleanSetting(
         userDataRepository, PluginSettings.ENABLE_EXPLORE, PluginSettings.DEFAULT_ENABLE_EXPLORE
@@ -105,6 +107,9 @@ fun Wenku8PlusPage(
     val writeReadingLog by rememberBooleanSetting(
         userDataRepository, PluginSettings.WRITE_READING_LOG, PluginSettings.DEFAULT_WRITE_READING_LOG
     )
+    val siteSyncEnabled by rememberBooleanSetting(
+        userDataRepository, PluginSettings.SITE_SYNC_ENABLED, PluginSettings.DEFAULT_SITE_SYNC_ENABLED
+    )
     val autoUpload by rememberBooleanSetting(
         userDataRepository, PluginSettings.AUTO_UPLOAD, PluginSettings.DEFAULT_AUTO_UPLOAD
     )
@@ -127,6 +132,9 @@ fun Wenku8PlusPage(
     }
     val writeReadingLogUserData = remember(userDataRepository) {
         userDataRepository.booleanUserData(PluginSettings.WRITE_READING_LOG)
+    }
+    val siteSyncEnabledUserData = remember(userDataRepository) {
+        userDataRepository.booleanUserData(PluginSettings.SITE_SYNC_ENABLED)
     }
 
     var dialog by remember { mutableStateOf<Wenku8PlusDialog?>(null) }
@@ -193,6 +201,68 @@ fun Wenku8PlusPage(
                     "留空表示不带任何凭据; 只保存在本机, 不会写入云端快照",
             option = if (wenku8Cookie.isNotBlank()) "已设置" else "未设置",
             onClick = { dialog = Wenku8PlusDialog.Wenku8Cookie }
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+        SectionHeader(text = "wenku8 站点同步 (可选)")
+
+        // 与上面的云端同步是两件事: 这里写的是用户的站点账号(书架与书签),
+        // 云端同步写的是用户自己的 WebDAV / GitHub 空间。默认关闭, 且只在按下按钮时才发请求。
+        SettingsSwitchEntry(
+            modifier = settingsEntryModifier(),
+            title = "允许写入站点账号",
+            description = "关闭时下面的按钮不会发出任何请求; 打开后才允许把书架与书签写进你的 wenku8 账号",
+            checked = siteSyncEnabled,
+            booleanUserData = siteSyncEnabledUserData
+        )
+        SettingsClickableEntry(
+            modifier = settingsEntryModifier(),
+            title = "推送到站点书架",
+            description = "逐本加入站点书架, 并把书签写到本机记录的阅读章节; 站点侧有限流, 会比较慢",
+            onClick = siteSyncViewModel::pushShelf
+        )
+        SettingsClickableEntry(
+            modifier = settingsEntryModifier(),
+            title = "读取站点书架",
+            description = "列出站点书架上每本书的书签; 站点用重定向表达结果, 这是确认推送真的生效的方式",
+            onClick = siteSyncViewModel::loadSiteShelf
+        )
+        SettingsBasicEntry(
+            modifier = settingsEntryModifier(),
+            title = "站点同步状态",
+            description = siteUiState.message.ifBlank { "尚未执行过站点操作" },
+            trailingContent = {
+                if (siteUiState.running) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            },
+            extraBelowContent = {
+                if (siteUiState.running && siteUiState.runningLabel.isNotBlank()) {
+                    Text(
+                        text = siteUiState.runningLabel,
+                        color = colorScheme.onSurfaceVariant,
+                        style = typography.bodySmall
+                    )
+                }
+                siteUiState.siteShelfCount?.let { count ->
+                    Text(
+                        text = "站点书架：$count 本，其中 ${siteUiState.siteBookmarkCount ?: 0} 本有书签",
+                        color = colorScheme.onSurfaceVariant,
+                        style = typography.bodySmall
+                    )
+                }
+                siteUiState.preview.forEach { line ->
+                    Text(
+                        text = "· $line",
+                        color = colorScheme.onSurfaceVariant,
+                        style = typography.bodySmall
+                    )
+                }
+            }
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))

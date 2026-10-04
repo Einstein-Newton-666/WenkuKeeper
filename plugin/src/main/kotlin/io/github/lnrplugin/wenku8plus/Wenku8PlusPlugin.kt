@@ -12,6 +12,7 @@ import io.github.lnrplugin.wenku8plus.migrate.MigrationEngine
 import io.github.lnrplugin.wenku8plus.source.PluginSettingsRegistry
 import io.github.lnrplugin.wenku8plus.source.Wenku8PlusDataSource
 import io.github.lnrplugin.wenku8plus.ui.MigrationViewModel
+import io.github.lnrplugin.wenku8plus.ui.SiteSyncViewModel
 import io.github.lnrplugin.wenku8plus.ui.SyncViewModel
 import io.github.lnrplugin.wenku8plus.ui.Wenku8PlusPage
 import io.nightfish.lightnovelreader.api.book.BookRepositoryApi
@@ -171,6 +172,22 @@ class Wenku8PlusPlugin(
         )
     }
 
+    /**
+     * wenku8 站点同步的状态持有者。
+     *
+     * 与云端备份是两件不同的事：这里写的是**用户的站点账号**（书架与书签），
+     * 云端备份写的是用户自己的 WebDAV / GitHub 空间。默认关闭，见
+     * [PluginSettings.SITE_SYNC_ENABLED]。
+     */
+    private val siteSyncViewModel: SiteSyncViewModel by lazy {
+        SiteSyncViewModel(
+            context = context,
+            userDataRepository = userDataRepository,
+            bookshelfRepository = bookshelfRepository,
+            bookRepository = bookRepository
+        )
+    }
+
     override fun onLoad() {
         Log.i(TAG, "Wenku8Plus 插件已加载，数据源 id = ${PluginConstants.WEB_DATA_SOURCE}")
         // 数据源由宿主在本回调之后才实例化，因此把仓库登记到共享持有者，供其读取插件设置。
@@ -228,11 +245,13 @@ class Wenku8PlusPlugin(
         // remember 保证重组时不会反复新建状态持有者。
         val viewModel = remember { syncViewModel }
         val migration = remember { migrationViewModel }
+        val siteSync = remember { siteSyncViewModel }
         Wenku8PlusPage(
             paddingValues = paddingValues,
             userDataRepository = userDataRepository,
             syncViewModel = viewModel,
-            migrationViewModel = migration
+            migrationViewModel = migration,
+            siteSyncViewModel = siteSync
         )
     }
 }

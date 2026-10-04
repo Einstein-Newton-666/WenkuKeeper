@@ -36,6 +36,18 @@ object PluginSettings {
     const val WENKU8_COOKIE = "$ROOT.source.cookie"
 
     // ---------------------------------------------------------------------
+    // wenku8 站点同步（可选）
+    // ---------------------------------------------------------------------
+
+    /**
+     * 是否允许向 wenku8 站点账号写入。
+     *
+     * **默认关闭**：插件只读站点内容时不需要它，而写书架是有副作用的操作（会改用户账号里的
+     * 数据），因此必须由用户显式打开。关闭时页面上的站点同步按钮只显示提示，不发任何请求。
+     */
+    const val SITE_SYNC_ENABLED = "$ROOT.site.enabled"
+
+    // ---------------------------------------------------------------------
     // Cloud sync — backend selection
     // ---------------------------------------------------------------------
 
@@ -110,6 +122,7 @@ object PluginSettings {
         PREFERRED_HOST,
         ENABLE_EXPLORE,
         WENKU8_COOKIE,
+        SITE_SYNC_ENABLED,
         CLOUD_BACKEND,
         WRITE_READING_LOG,
         WEBDAV_URL,
@@ -145,6 +158,7 @@ object PluginSettings {
     const val DEFAULT_PREFERRED_HOST = ""
     const val DEFAULT_ENABLE_EXPLORE = true
     const val DEFAULT_WENKU8_COOKIE = ""
+    const val DEFAULT_SITE_SYNC_ENABLED = false
     const val DEFAULT_CLOUD_BACKEND = BACKEND_WEBDAV
     const val DEFAULT_WRITE_READING_LOG = true
     const val DEFAULT_WEBDAV_URL = ""
