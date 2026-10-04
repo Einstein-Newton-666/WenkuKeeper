@@ -30,12 +30,13 @@ DELID_REGEX = re.compile(r"[?&]delid=(\d+)")
 
 FALLBACK_BOOKMARK_DISTANCE = 3
 
-# (internalId, aid, title, bookmarkChapterId) -- 前两条来自真实抓包（均无书签），
-# 第三条是 fixture 里合成的、用于覆盖书签非空路径的样本。
+# (internalId, aid, title, bookmarkChapterId)
+# 三条**全部来自真实抓取**（2026-10-04，两次不同的 Playwright 会话）：前两条书签为空，
+# 第三条是书签非空的样本——推送成功后从站点书架抓到，不再需要合成数据。
 EXPECTED = [
     ("11791091", "2964", "Silent Witch 沉默魔女的秘密(沉默的魔女)", None),
     ("11539000", "1973", "欢迎来到实力至上主义的教室", None),
-    ("11780308", "3241", "合成样本", "190002"),
+    ("13167835", "3299", "我想成为你的眼泪", "136289"),
 ]
 
 
