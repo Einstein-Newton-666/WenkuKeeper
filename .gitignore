@@ -1,0 +1,22 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea
+.DS_Store
+/build
+/plugin/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# 旧的工具链位置。现在 JDK / Android SDK / AVD / Gradle 缓存放在工作区的
+# project/vm（见 tools/toolchain.ps1），已不在仓库内；这里保留一行是为了兼容
+# 仍然使用旧布局的检出（脚本会回退到该目录）。
+/.build-tools/
+
+# 构建与崩溃诊断残留
+/*.log
+hs_err_pid*.log
+replay_pid*.log

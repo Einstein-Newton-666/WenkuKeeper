@@ -1,0 +1,6 @@
+# 仓库内存 LF，检出时由 Git 按平台处理（本机 core.autocrlf=true）。
+* text=auto
+
+# gradlew 是 Unix shell 脚本，必须保持 LF，否则在 Linux/macOS 上会报
+# `/usr/bin/env: 'sh\r': No such file or directory`。
+gradlew text eol=lf
